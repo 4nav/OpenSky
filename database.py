@@ -4,7 +4,7 @@ import json
 DB_PATH = "auctions.db"
 
 def get_db_connection():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH,timeout=15)
     return conn
 
 def create_tables(conn):
@@ -39,6 +39,18 @@ def create_tables(conn):
             bin INTEGER,
             start INTEGER,
             end INTEGER
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS ended_auctions (
+            auction_id TEXT PRIMARY KEY,
+            item_id TEXT,
+            quantity INTEGER,
+            price INTEGER,
+            bin INTEGER,
+            sold_at INTEGER
         )
         """
     )
@@ -85,5 +97,20 @@ def insert_pet(conn, pet_data, auction):
         int(auction.get("bin", False)),
         auction["start"],
         auction["end"],
+    )
+)
+    
+def insert_ended_auction(conn, sold_data, auction):
+    conn.execute("""
+        INSERT OR REPLACE INTO ended_auctions
+        (auction_id, item_id, quantity, price, bin, sold_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        auction["auction_id"],
+        sold_data["item_id"],
+        sold_data["quantity"],
+        auction["price"],
+        int(auction.get("bin", False)),
+        auction["timestamp"],
     )
 )

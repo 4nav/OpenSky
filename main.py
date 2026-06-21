@@ -43,7 +43,7 @@ async def run_cycle(conn):
         for auction in auctions:
             process_auction(conn, auction)
         conn.commit()
-    print(f"Cycle done - Processed {len(auctions)} auctions")
+    print(f"Cycle done - Processed {len(auctions)} auctions")  
 
 async def main():
     conn = get_db_connection()

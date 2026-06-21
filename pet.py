@@ -1,5 +1,5 @@
 import json
-from parser import decode_item
+from nbt import decode_item
 
 
 def is_pet(item_bytes_64):
