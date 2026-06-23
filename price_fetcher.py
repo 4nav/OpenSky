@@ -3,7 +3,7 @@ import asyncio
 
 URL = "https://api.hypixel.net/skyblock/auctions_ended"
 
-async def get_ended_auctions():
+async def get_ended_auctions(session):
     async with aiohttp.ClientSession() as session:
         async with session.get(URL) as response:
             return await response.json()

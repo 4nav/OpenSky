@@ -1,32 +1,29 @@
 import asyncio
 import aiohttp
 import time
-from fetcher import get_page
-from parser import extract_item_data
-from pet import extract_pet_data, is_pet
-from database import get_db_connection, create_tables, insert_item_listing, insert_pet
+from price_fetcher import get_ended_auctions
+from parser import extract_sold_item
+from database import get_db_connection, create_tables, insert_ended_auction
 
-POLL_INTERVAL = 25 # Faster than main since we need to snipe the live auctions before they end
+POLL_INTERVAL = 25
 
 def process_ended_auction(conn, auction):
     try:
-        sold_data = extract_item_data(auction["item_bytes"])
-        insert_item_listing(conn, sold_data, auction)
-    
+        sold_data = extract_sold_item(auction["item_bytes"])
+        insert_ended_auction(conn, sold_data, auction)
     except Exception as e:
-        print(f"Failed on auction {auction['auction_id', '???']}: {e}")
+        print(f"Failed on auction {auction.get('auction_id', '???')}: {e}")
 
 async def run_cycle(conn):
     async with aiohttp.ClientSession() as session:
-        data = await get_page(session, 0, ended=True)
-        auctions = data["auctions"]
+        data = await get_ended_auctions(session)
+    auctions = data["auctions"]
 
-        for auction in auctions:
-            process_ended_auction(conn, auction)
+    for auction in auctions:
+        process_ended_auction(conn, auction)
 
-        conn.commit()
-
-        print(f"Cycle completed at {time.ctime()}  - Processed {len(auctions)} ended auctions")
+    conn.commit()
+    print(f"Cycle completed at {time.ctime()} - Processed {len(auctions)} ended auctions")
 
 async def main():
     conn = get_db_connection()
