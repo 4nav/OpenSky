@@ -18,3 +18,14 @@ def parse_bazaar(products):
             "sell_volume": qs.get("sellVolume", 0),
         }
     return prices
+
+def enchant_to_bazaar_key(name,level):
+    return f"ENCHANTMENT_{name.upper()}_{level}"
+
+def get_enchant_cost(prices,name,level):
+    key = enchant_to_bazaar_key(name, level)
+    return prices.get(key, {}).get("instabuy", 0)
+
+def get_modifier_cost(prices, modifier_id):
+    return prices.get(modifier_id, {}).get("instabuy", 0)
+
