@@ -1,3 +1,4 @@
+import json
 from nbt import decode_item
 from pet import is_pet, extract_pet_data
 
@@ -22,11 +23,18 @@ def extract_sold_item(item_bytes_64):
 
     if is_pet(item_bytes_64):
         pet_data = extract_pet_data(item_bytes_64)
-        item_id = f"PET_{pet_data['species']}"
+        return {
+            "item_id": f"PET_{pet_data['species']}",
+            "quantity": int(item["Count"]),
+            "enchantments": "[]",
+            "rarity_upgrades": 0,
+        }
     else:
         extra = item["tag"]["ExtraAttributes"]
-        item_id = str(extra["id"])
-
-    quantity = int(item["Count"])
-
-    return {"item_id": item_id, "quantity": quantity}
+        enchants = dict(extra.get("enchantments", {}))
+        return {
+            "item_id": str(extra["id"]),
+            "quantity": int(item["Count"]),
+            "enchantments": json.dumps(enchants),
+            "rarity_upgrades": int(extra.get("rarity_upgrades", 0)),
+        }

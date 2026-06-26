@@ -50,7 +50,9 @@ def create_tables(conn):
             quantity INTEGER,
             price INTEGER,
             bin INTEGER,
-            sold_at INTEGER
+            sold_at INTEGER,
+            enchantments TEXT,
+            rarity_upgrades INTEGER
         )
         """
     )
@@ -103,8 +105,8 @@ def insert_pet(conn, pet_data, auction):
 def insert_ended_auction(conn, sold_data, auction):
     conn.execute("""
         INSERT OR REPLACE INTO ended_auctions
-        (auction_id, item_id, quantity, price, bin, sold_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (auction_id, item_id, quantity, price, bin, sold_at, enchantments, rarity_upgrades)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         auction["auction_id"],
         sold_data["item_id"],
@@ -112,5 +114,7 @@ def insert_ended_auction(conn, sold_data, auction):
         auction["price"],
         int(auction.get("bin", False)),
         auction["timestamp"],
+        sold_data.get("enchantments", "[]"),
+        sold_data.get("rarity_upgrades", 0),
     )
 )

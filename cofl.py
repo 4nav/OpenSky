@@ -1,21 +1,20 @@
 import asyncio
 import aiohttp
-import sqlite3
-import time
+import json
 from datetime import datetime
 from database import get_db_connection, create_tables
 
 COFL_BASE = "https://sky.coflnet.com/api"
-RATE_LIMIT_DELAY = 0.5  # seconds
+RATE_LIMIT_DELAY = 0.5
 
 def iso_to_ms(iso_str):
     return int(datetime.fromisoformat(iso_str).timestamp() * 1000)
 
 def get_all_items(conn):
-    return[
+    return [
         row[0] for row in conn.execute(
             "SELECT DISTINCT item_id FROM item_listings"
-            ).fetchall()
+        ).fetchall()
     ]
 
 async def fetch_sold(session, item_id):
@@ -24,12 +23,12 @@ async def fetch_sold(session, item_id):
         if response.status != 200:
             return []
         return await response.json()
-    
+
 def insert_cofl_sales(conn, item_id, sales):
     rows = []
     for sale in sales:
         if not sale.get("bin"):
-            continue #BIN only for price history
+            continue
         try:
             rows.append((
                 sale["uuid"],
@@ -38,18 +37,20 @@ def insert_cofl_sales(conn, item_id, sales):
                 sale.get("highestBidAmount", 0),
                 1,
                 iso_to_ms(sale["end"]),
+                json.dumps(sale.get("enchantments", [])),
+                int(sale.get("flattenedNbt", {}).get("rarity_upgrades", 0)),
             ))
-        except Exception:
+        except Exception as e:
+            print(f"row failed: {e}")
             continue
 
     conn.executemany("""
         INSERT OR IGNORE INTO ended_auctions
-        (auction_id, item_id, quantity, price, bin, sold_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (auction_id, item_id, quantity, price, bin, sold_at, enchantments, rarity_upgrades)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """, rows)
     conn.commit()
     return len(rows)
-    
 
 async def bootstrap():
     conn = get_db_connection()
@@ -67,6 +68,6 @@ async def bootstrap():
 
     conn.close()
     print("bootstrap complete")
-    
+
 if __name__ == "__main__":
     asyncio.run(bootstrap())
