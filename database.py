@@ -1,5 +1,6 @@
 import sqlite3
 import json
+import time
 
 DB_PATH = "auctions.db"
 
@@ -56,6 +57,19 @@ def create_tables(conn):
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS bazaar_prices (
+            product_id TEXT PRIMARY KEY,
+            instabuy REAL,
+            instasell REAL,
+            buy_volume INTEGER,
+            sell_volume INTEGER,
+            updated_at INTEGER
+        )
+        """
+    )
+
     conn.commit()
 
 def insert_item_listing(conn, item_data, auction):
@@ -118,3 +132,14 @@ def insert_ended_auction(conn, sold_data, auction):
         sold_data.get("rarity_upgrades", 0),
     )
 )
+
+def upsert_bazaar_prices(conn,prices):
+    now = int(time.time() * 1000)
+    conn.executemany("""
+        INSERT OR REPLACE INTO bazaar_prices
+        (product_id, instabuy, instasell, buy_volume, sell_volume, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, [
+        (pid, p["instabuy"], p["instasell"], p["buy_volume"], p["sell_volume"], now)
+        for pid, p in prices.items()
+    ])

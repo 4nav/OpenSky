@@ -4,7 +4,9 @@ import time
 from fetcher import get_page
 from parser import extract_item_data
 from pet import extract_pet_data, is_pet
-from database import get_db_connection, create_tables, insert_item_listing, insert_pet
+from database import get_db_connection, create_tables, insert_item_listing, insert_pet, upsert_bazaar_prices
+from bazaar import fetch_bazaar, parse_bazaar
+
 
 POLL_INTERVAL = 60
 
@@ -39,11 +41,19 @@ def process_auction(conn,auction):
 
 async def run_cycle(conn):
     async with aiohttp.ClientSession() as session:
-        auctions = await fetch_all_auctions(session)
-        for auction in auctions:
-            process_auction(conn, auction)
-        conn.commit()
-    print(f"Cycle done - Processed {len(auctions)} auctions")  
+        auctions,products = await asyncio.gather(
+             fetch_all_auctions(session),
+             fetch_bazaar(session)
+        )
+    bazaar_prices = parse_bazaar(products)
+    upsert_bazaar_prices(conn, bazaar_prices)
+
+    for auction in auctions:
+        process_auction(conn, auction)
+
+    conn.commit()
+    print(f"Cycle completed at {time.ctime()} - {len(auctions)} auctions, {len(bazaar_prices)} bazaar products")
+
 
 async def main():
     conn = get_db_connection()
