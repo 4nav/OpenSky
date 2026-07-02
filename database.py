@@ -53,7 +53,8 @@ def create_tables(conn):
             bin INTEGER,
             sold_at INTEGER,
             enchantments TEXT,
-            rarity_upgrades INTEGER
+            rarity_upgrades INTEGER,
+            bids TEXT
         )
         """
     )
@@ -130,6 +131,7 @@ def insert_ended_auction(conn, sold_data, auction):
         auction["timestamp"],
         sold_data.get("enchantments", "[]"),
         sold_data.get("rarity_upgrades", 0),
+        json.dumps(auction.get("bids", [])),
     )
 )
 

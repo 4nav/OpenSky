@@ -39,6 +39,7 @@ def insert_cofl_sales(conn, item_id, sales):
                 iso_to_ms(sale["end"]),
                 json.dumps(sale.get("enchantments", [])),
                 int(sale.get("flattenedNbt", {}).get("rarity_upgrades", 0)),
+                "[]",
             ))
         except Exception as e:
             print(f"row failed: {e}")
