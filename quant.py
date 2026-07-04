@@ -50,7 +50,7 @@ def get_enchant_true_cost(prices, name, level):
     combine_cost = 2 * get_enchant_true_cost(prices, name, level - 1)
     return min(bazaar_price, combine_cost)
 
-def calc_enchant_cost(prices, enchantments_json, daily_vol):
+def calc_enchant_cost(prices, enchantments_json, daily_vol, cap=None):
     """
     Sum true cost of all enchants on an item, discounted by base item liquidity.
     High enchant on unpopular item -> near-zero contribution.
@@ -79,7 +79,46 @@ def calc_enchant_cost(prices, enchantments_json, daily_vol):
         get_enchant_true_cost(prices, name, level)
         for name, level in enchants.items()
     )
-    return total * liq_score
+    discounted = total * liq_score
+
+    return min(discounted, cap) if cap is not None else discounted
+
+def get_percentile(n_sales):
+    if(n_sales < 10):return 70
+    if n_sales < 50: return 80
+    if n_sales < 200: return 90
+    return 99
+
+def get_enchant_cost_cap(conn, item_id):
+    """
+    Max enchant premium the market's actually paid for this item, scaled by sample size.
+    """
+    clean_rows = conn.execute("""
+        SELECT price, quantity FROM ended_auctions
+        WHERE item_id = ? AND bin = 1 
+          AND (enchantments = '{}' OR enchantments = '[]' OR enchantments IS NULL)
+    """, (item_id,)).fetchall()
+
+    enchanted_rows = conn.execute("""
+        SELECT price, quantity FROM ended_auctions
+        WHERE item_id = ? AND bin = 1
+          AND enchantments != '{}' AND enchantments != '[]' AND enchantments IS NOT NULL
+    """, (item_id,)).fetchall()
+
+
+    if(len(clean_rows) < 5 or len(enchanted_rows) < 5):
+        return None
+    
+    clean_unit_prices = [p / max(q, 1) for p, q in clean_rows]
+    enchanted_unit_prices = [p / max(q, 1) for p, q in enchanted_rows]
+
+
+    clean_median = float(np.median(clean_unit_prices))
+    percentile = get_percentile(len(enchanted_unit_prices))
+    enchant_cap = float(np.percentile(enchanted_unit_prices, percentile)) 
+
+    return max(enchant_cap - clean_median, 0)
+
 
 
 #----------------------Price Fetching-------------------------------------------------
@@ -102,13 +141,14 @@ def _get_price_rows(conn,item_id, window_ms = SEVEN_DAYS_MS):
     """, (item_id, cutoff)).fetchall()
 
 
-def _base_prices_rows(bazaar_prices, rows, daily_vol):
+def _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol):
     """"Strip enchant costs from item and create a list of base prices, preserve qty for VWAP"""
+    cap = get_enchant_cost_cap(conn, item_id)
     result = []
     for price,qty,enchants_json in rows:
         qty = max(qty, 1)
         unit_price = price/qty
-        enchant_cost = calc_enchant_cost(bazaar_prices, enchants_json, daily_vol)
+        enchant_cost = calc_enchant_cost(bazaar_prices, enchants_json, daily_vol, cap)
         base = unit_price - enchant_cost
         if base > 0:
                 result.append((base,qty))
@@ -126,7 +166,7 @@ def get_item_stats(conn,item_id,bazaar_prices):
 
     if not rows:
          return None
-    price_rows = _base_prices_rows(bazaar_prices, rows, daily_vol)
+    price_rows = _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol)
     if not price_rows:
          return None
     
@@ -160,3 +200,4 @@ def get_fair_price(conn, item_id, bazaar_prices):
     """
     stats = get_item_stats(conn, item_id, bazaar_prices)
     return stats["fair_price"] if stats else None
+

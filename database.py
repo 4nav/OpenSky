@@ -120,8 +120,8 @@ def insert_pet(conn, pet_data, auction):
 def insert_ended_auction(conn, sold_data, auction):
     conn.execute("""
         INSERT OR REPLACE INTO ended_auctions
-        (auction_id, item_id, quantity, price, bin, sold_at, enchantments, rarity_upgrades)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        (auction_id, item_id, quantity, price, bin, sold_at, enchantments, rarity_upgrades, bids)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         auction["auction_id"],
         sold_data["item_id"],

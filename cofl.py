@@ -47,8 +47,8 @@ def insert_cofl_sales(conn, item_id, sales):
 
     conn.executemany("""
         INSERT OR IGNORE INTO ended_auctions
-        (auction_id, item_id, quantity, price, bin, sold_at, enchantments, rarity_upgrades)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        (auction_id, item_id, quantity, price, bin, sold_at, enchantments, rarity_upgrades, bids)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, rows)
     conn.commit()
     return len(rows)
