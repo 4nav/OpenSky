@@ -41,8 +41,6 @@ def insert_cofl_sales(conn, item_id, sales):
                 int(sale.get("flattenedNbt", {}).get("rarity_upgrades", 0)),
                 "[]",
                 int(sale.get("flattenedNbt", {}).get("hot_potato_count", 0)),
-                int(sale.get("flattenedNbt", {}).get("art_of_war_count", 0)),
-
             ))
         except Exception as e:
             print(f"row failed: {e}")
@@ -50,8 +48,8 @@ def insert_cofl_sales(conn, item_id, sales):
 
     conn.executemany("""
         INSERT OR IGNORE INTO ended_auctions
-        (auction_id, item_id, quantity, price, bin, sold_at, enchantments, rarity_upgrades, bids, hot_potato_count, art_of_war_count)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (auction_id, item_id, quantity, price, bin, sold_at, enchantments, rarity_upgrades, bids, hot_potato_count)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, rows)
     conn.commit()
     return len(rows)

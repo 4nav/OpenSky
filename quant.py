@@ -1,6 +1,8 @@
 import numpy as np
 import json
 import time
+from bazaar import get_hot_potato_cost
+
 
 SEVEN_DAYS_MS   = 7 * 24 * 60 * 60 * 1000
 ONE_DAY_MS      = 24 * 60 * 60 * 1000
@@ -124,18 +126,17 @@ def get_enchant_cost_cap(conn, item_id):
 #----------------------Price Fetching-------------------------------------------------
 
 def _get_price_rows(conn,item_id, window_ms = SEVEN_DAYS_MS):
-    """BIN-only, clean items only (rarity_upgrades=0), rolling 7-day window.
+    """Rolling 7-day window.
     ORDER BY sold_at is required since log returns in get_item_stats assume chronological order, thus 
     random order produces meaningless rho"""
 
     cutoff = int(time.time()*1000) - window_ms
 
     return conn.execute("""
-        SELECT price, quantity, enchantments
+        SELECT price, quantity, enchantments, hot_potato_count, rarity_upgrades
         FROM ended_auctions
         WHERE item_id = ?
           AND bin = 1
-          AND rarity_upgrades = 0
           AND sold_at > ?
         ORDER BY sold_at
     """, (item_id, cutoff)).fetchall()
@@ -145,11 +146,13 @@ def _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol):
     """"Strip enchant costs from item and create a list of base prices, preserve qty for VWAP"""
     cap = get_enchant_cost_cap(conn, item_id)
     result = []
-    for price,qty,enchants_json in rows:
+    for price,qty,enchants_json,hpb_count, recomb_flag in rows:
         qty = max(qty, 1)
         unit_price = price/qty
         enchant_cost = calc_enchant_cost(bazaar_prices, enchants_json, daily_vol, cap)
-        base = unit_price - enchant_cost
+        hpb_cost = get_hot_potato_cost(bazaar_prices, hpb_count)
+        recomb_cost = bazaar_prices.get("RECOMBOBULATOR_3000", {}).get("instabuy", 0) * recomb_flag
+        base = unit_price - enchant_cost - hpb_cost - recomb_cost
         if base > 0:
                 result.append((base,qty))
     return result

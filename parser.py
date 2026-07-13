@@ -16,7 +16,6 @@ def extract_item_data(item_bytes_64, tier):
         "rarity_upgrades": int(extra.get("rarity_upgrades", 0)),
         "dye_item": str(extra.get("dye_item", "")),
         "hot_potato_count": int(extra.get("hot_potato_count", 0)),
-        "art_of_war_count": int(extra.get("art_of_war_count", 0)),
     }
 
 def extract_sold_item(item_bytes_64):
@@ -31,7 +30,6 @@ def extract_sold_item(item_bytes_64):
             "enchantments": "[]",
             "rarity_upgrades": 0,
             "hot_potato_count": 0,
-            "art_of_war_count": 0,
         }
     else:
         extra = item["tag"]["ExtraAttributes"]
@@ -42,5 +40,4 @@ def extract_sold_item(item_bytes_64):
             "enchantments": json.dumps(enchants),
             "rarity_upgrades": int(extra.get("rarity_upgrades", 0)),
             "hot_potato_count": int(extra.get("hot_potato_count", 0)),
-            "art_of_war_count": int(extra.get("art_of_war_count", 0)),
         }
