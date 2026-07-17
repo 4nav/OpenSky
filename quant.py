@@ -1,8 +1,8 @@
+from itertools import count
 import numpy as np
 import json
 import time
-from bazaar import get_hot_potato_cost
-
+from bazaar import get_modifier_cost
 
 SEVEN_DAYS_MS   = 7 * 24 * 60 * 60 * 1000
 ONE_DAY_MS      = 24 * 60 * 60 * 1000
@@ -121,8 +121,6 @@ def get_enchant_cost_cap(conn, item_id):
 
     return max(enchant_cap - clean_median, 0)
 
-
-
 #----------------------Price Fetching-------------------------------------------------
 
 def _get_price_rows(conn,item_id, window_ms = SEVEN_DAYS_MS):
@@ -150,8 +148,9 @@ def _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol):
         qty = max(qty, 1)
         unit_price = price/qty
         enchant_cost = calc_enchant_cost(bazaar_prices, enchants_json, daily_vol, cap)
-        hpb_cost = get_hot_potato_cost(bazaar_prices, hpb_count)
-        recomb_cost = bazaar_prices.get("RECOMBOBULATOR_3000", {}).get("instabuy", 0) * recomb_flag
+        hpb_cost = (get_modifier_cost(bazaar_prices, "HOT_POTATO_BOOK", min(hpb_count, 10))
+                    + get_modifier_cost(bazaar_prices, "FUMING_POTATO_BOOK", max(0, hpb_count - 10)))
+        recomb_cost = get_modifier_cost(bazaar_prices, "RECOMBOBULATOR_3000", recomb_flag)
         base = unit_price - enchant_cost - hpb_cost - recomb_cost
         if base > 0:
                 result.append((base,qty))

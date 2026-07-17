@@ -26,16 +26,5 @@ def get_enchant_cost(prices,name,level):
     key = enchant_to_bazaar_key(name, level)
     return prices.get(key, {}).get("instabuy", 0)
 
-def get_modifier_cost(prices, modifier_id):
-    return prices.get(modifier_id, {}).get("instabuy", 0)
-
-def get_hot_potato_cost(prices, count):
-    if(count <= 0):
-        return 0
-    hpb_price = prices.get("HOT_POTATO_BOOK", {}).get("instabuy", 0)
-    fpb_price = prices.get("FUMING_POTATO_BOOK", {}).get("instabuy", 0)
-
-    regular_count = min(10, count)
-    fuming_count = max(0, count - 10)
-
-    return (regular_count * hpb_price) + (fuming_count * fpb_price)
+def get_modifier_cost(prices, modifier_id, count = 1):
+    return count * prices.get(modifier_id, {}).get("instabuy", 0)

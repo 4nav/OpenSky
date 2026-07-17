@@ -1,17 +1,10 @@
 import json
 from nbt import decode_item
 
-
-def is_pet(item_bytes_64):
-    nbt_data = decode_item(item_bytes_64)
-    extra = nbt_data["i"][0]["tag"]["ExtraAttributes"]
+def is_pet(extra):
     return "petInfo" in extra
 
-def extract_pet_data(item_bytes_64):
-    nbt_data = decode_item(item_bytes_64)
-    item = nbt_data["i"][0]
-    extra = item["tag"]["ExtraAttributes"]
-
+def extract_pet_data(extra):
     pet_info = json.loads(str(extra["petInfo"]))
 
     return {
