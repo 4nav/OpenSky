@@ -55,7 +55,7 @@ def create_tables(conn):
             enchantments TEXT,
             rarity_upgrades INTEGER,
             bids TEXT,
-            hot_potato_count INTEGER,
+            hot_potato_count INTEGER
         )
         """
     )

@@ -2,6 +2,7 @@ import asyncio
 import aiohttp
 import time
 from fetcher import get_page
+from nbt import decode_item
 from parser import extract_item_data
 from pet import extract_pet_data, is_pet
 from database import get_db_connection, create_tables, insert_item_listing, insert_pet, upsert_bazaar_prices
@@ -29,8 +30,11 @@ def process_auction(conn,auction):
         return
     
     try:
-        if is_pet(auction["item_bytes"]):
-            pet_data = extract_pet_data(auction["item_bytes"])
+        nbt_data = decode_item(auction["item_bytes"])
+        extra = nbt_data["i"][0]["tag"]["ExtraAttributes"]
+
+        if is_pet(extra):
+            pet_data = extract_pet_data(extra)
             insert_pet(conn, pet_data, auction)
         else:
             item_data = extract_item_data(auction["item_bytes"], auction.get("tier", ""))
