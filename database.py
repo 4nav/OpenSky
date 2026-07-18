@@ -21,6 +21,8 @@ def create_tables(conn):
             tier TEXT,
             rarity_upgrades INTEGER,
             dye_item TEXT,
+            hot_potato_count INTEGER,
+            gemstones TEXT,
             bin INTEGER,
             start INTEGER,
             end INTEGER
@@ -55,7 +57,8 @@ def create_tables(conn):
             enchantments TEXT,
             rarity_upgrades INTEGER,
             bids TEXT,
-            hot_potato_count INTEGER
+            hot_potato_count INTEGER,
+            gemstones TEXT
         )
         """
     )
@@ -78,8 +81,8 @@ def insert_item_listing(conn, item_data, auction):
     conn.execute(
         """
         INSERT OR REPLACE INTO item_listings (
-            uuid, item_id, name, price, reforge, enchantments, tier, rarity_upgrades, dye_item, bin, start, end
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            uuid, item_id, name, price, reforge, enchantments, tier, rarity_upgrades, dye_item, hot_potato_count, gemstones, bin, start, end
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             auction["uuid"],
@@ -91,6 +94,8 @@ def insert_item_listing(conn, item_data, auction):
             item_data["tier"],
             item_data["rarity_upgrades"],
             item_data["dye_item"],
+            item_data["hot_potato_count"],
+            item_data["gemstones"],
             int(auction.get("bin", False)),
             auction["start"],
             auction["end"],
@@ -121,8 +126,8 @@ def insert_pet(conn, pet_data, auction):
 def insert_ended_auction(conn, sold_data, auction):
     conn.execute("""
         INSERT OR REPLACE INTO ended_auctions
-        (auction_id, item_id, quantity, price, bin, sold_at, enchantments, rarity_upgrades, bids, hot_potato_count)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (auction_id, item_id, quantity, price, bin, sold_at, enchantments, rarity_upgrades, bids, hot_potato_count, gemstones)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         auction["auction_id"],
         sold_data["item_id"],
@@ -134,6 +139,7 @@ def insert_ended_auction(conn, sold_data, auction):
         sold_data.get("rarity_upgrades", 0),
         json.dumps(auction.get("bids", [])),
         sold_data.get("hot_potato_count", 0),
+        sold_data.get("gemstones", "{}"),
     )
 )
 

@@ -2,6 +2,19 @@ import json
 from nbt import decode_item
 from pet import is_pet, extract_pet_data
 
+GEM_TYPES = {"RUBY", "AMBER", "SAPPHIRE", "JADE", "AMETHYST", "TOPAZ", "JASPER", "OPAL", "ONYX", "AQUAMARINE", "CITRINE", "PERIDOT"}
+
+def extract_gemstones(extra):
+    gemstones = {}
+    for key,value in extra.items():
+        if key == "unlocked_slots" or key.endswith(".uuid"):
+            continue
+        gem_type = key.rsplit("_",1)[0]
+        if gem_type in GEM_TYPES:
+            gemstones[key] = str(value)
+    return gemstones
+
+
 def extract_item_data(item_bytes_64, tier):
     nbt_data = decode_item(item_bytes_64)
     item = nbt_data["i"][0]
@@ -16,6 +29,7 @@ def extract_item_data(item_bytes_64, tier):
         "rarity_upgrades": int(extra.get("rarity_upgrades", 0)),
         "dye_item": str(extra.get("dye_item", "")),
         "hot_potato_count": int(extra.get("hot_potato_count", 0)),
+        "gemstones": json.dumps(extract_gemstones(extra)),
     }
 
 def extract_sold_item(item_bytes_64):
@@ -31,6 +45,7 @@ def extract_sold_item(item_bytes_64):
             "enchantments": "[]",
             "rarity_upgrades": 0,
             "hot_potato_count": 0,
+            "gemstones": "{}",
         }
     
     enchants = dict(extra.get("enchantments", {}))
@@ -40,4 +55,5 @@ def extract_sold_item(item_bytes_64):
         "enchantments": json.dumps(enchants),
         "rarity_upgrades": int(extra.get("rarity_upgrades", 0)),
         "hot_potato_count": int(extra.get("hot_potato_count", 0)),
+        "gemstones": json.dumps(extract_gemstones(extra)),
     }

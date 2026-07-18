@@ -121,6 +121,28 @@ def get_enchant_cost_cap(conn, item_id):
 
     return max(enchant_cap - clean_median, 0)
 
+#----------------------Gemstones-------------------------------------------------
+def calc_gemstone_cost(prices, gemstones_json):
+    """
+    Sum bazaar instabuy cost of every socketed gem on the item.
+    gemstones_json is like {"PERIDOT_0": "FLAWLESS", "RUBY_1": "PERFECT"} -
+    slot key gives gem type, value gives quality; bazaar product id is "{QUALITY}_{TYPE}_GEM".
+    """
+    if not gemstones_json:
+        return 0
+
+    try:
+        gemstones = json.loads(gemstones_json)
+    except (json.JSONDecodeError, TypeError):
+        return 0
+
+    total = 0
+    for slot_key, quality in gemstones.items():
+        gem_type = slot_key.rsplit("_", 1)[0]
+        product_id = f"{quality}_{gem_type}_GEM"
+        total += get_modifier_cost(prices, product_id, 1)
+    return total
+
 #----------------------Price Fetching-------------------------------------------------
 
 def _get_price_rows(conn,item_id, window_ms = SEVEN_DAYS_MS):
@@ -131,7 +153,7 @@ def _get_price_rows(conn,item_id, window_ms = SEVEN_DAYS_MS):
     cutoff = int(time.time()*1000) - window_ms
 
     return conn.execute("""
-        SELECT price, quantity, enchantments, hot_potato_count, rarity_upgrades
+        SELECT price, quantity, enchantments, hot_potato_count, rarity_upgrades, gemstones
         FROM ended_auctions
         WHERE item_id = ?
           AND bin = 1
@@ -144,14 +166,15 @@ def _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol):
     """"Strip enchant costs from item and create a list of base prices, preserve qty for VWAP"""
     cap = get_enchant_cost_cap(conn, item_id)
     result = []
-    for price,qty,enchants_json,hpb_count, recomb_flag in rows:
+    for price,qty,enchants_json,hpb_count, recomb_flag, gemstones_json in rows:
         qty = max(qty, 1)
         unit_price = price/qty
         enchant_cost = calc_enchant_cost(bazaar_prices, enchants_json, daily_vol, cap)
         hpb_cost = (get_modifier_cost(bazaar_prices, "HOT_POTATO_BOOK", min(hpb_count, 10))
                     + get_modifier_cost(bazaar_prices, "FUMING_POTATO_BOOK", max(0, hpb_count - 10)))
         recomb_cost = get_modifier_cost(bazaar_prices, "RECOMBOBULATOR_3000", recomb_flag)
-        base = unit_price - enchant_cost - hpb_cost - recomb_cost
+        gemstone_cost = calc_gemstone_cost(bazaar_prices, gemstones_json)
+        base = unit_price - enchant_cost - hpb_cost - recomb_cost - gemstone_cost
         if base > 0:
                 result.append((base,qty))
     return result
@@ -202,4 +225,3 @@ def get_fair_price(conn, item_id, bazaar_prices):
     """
     stats = get_item_stats(conn, item_id, bazaar_prices)
     return stats["fair_price"] if stats else None
-
