@@ -22,6 +22,21 @@ def parse_slot_cost(entries):
             gems.append((product_id, count))
     return {"coins": coins, "gems": gems}
 
+def calc_gemstone_chamber_cost(bazaar_prices):
+    """GEMSTONE_CHAMBER is not itself bazaar-tradeable (it's AH-only), so get_modifier_cost
+    would silently return 0 for it. Instead price it as the cost to craft one from its
+    bazaar-tradeable Forge recipe: 100x Worm Membrane + 1x Gemstone Mixture + 25,000 coins.
+    This is a craft-cost estimate, not a live AH market price - real sellers may value an
+    already-forged chamber higher to account for the 4-hour Forge time, so this likely
+    under-prices slightly rather than over-prices.
+    """
+    return (
+        get_modifier_cost(bazaar_prices, "WORM_MEMBRANE", 100)
+        + get_modifier_cost(bazaar_prices, "GEMSTONE_MIXTURE", 1)
+        + 25_000
+    )
+
+
 def get_unlock_slot_cost(item_id, slot_key, gemstone_costs, bazaar_prices):
     """
     Total coin cost to unlock one gemstone slot on an item. Should return 0 if its free to unlock. 
