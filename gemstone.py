@@ -37,7 +37,7 @@ def calc_gemstone_chamber_cost(bazaar_prices):
     )
 
 
-def get_unlock_slot_cost(item_id, slot_key, gemstone_costs, bazaar_prices):
+def get_slot_unlock_cost(item_id, slot_key, gemstone_costs, bazaar_prices):
     """
     Total coin cost to unlock one gemstone slot on an item. Should return 0 if its free to unlock. 
     """

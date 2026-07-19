@@ -3,6 +3,7 @@ import aiohttp
 import json
 from datetime import datetime
 from database import get_db_connection, create_tables
+from parser import extract_gemstones
 
 COFL_BASE = "https://sky.coflnet.com/api"
 RATE_LIMIT_DELAY = 0.5
@@ -30,6 +31,7 @@ def insert_cofl_sales(conn, item_id, sales):
         if not sale.get("bin"):
             continue
         try:
+            flattened = sale.get("flattenedNbt", {})
             rows.append((
                 sale["uuid"],
                 item_id,
@@ -38,9 +40,10 @@ def insert_cofl_sales(conn, item_id, sales):
                 1,
                 iso_to_ms(sale["end"]),
                 json.dumps(sale.get("enchantments", [])),
-                int(sale.get("flattenedNbt", {}).get("rarity_upgrades", 0)),
+                int(flattened.get("rarity_upgrades", 0)),
                 "[]",
-                int(sale.get("flattenedNbt", {}).get("hot_potato_count", 0)),
+                int(flattened.get("hot_potato_count", 0)),
+                json.dumps(extract_gemstones(flattened)),
             ))
         except Exception as e:
             print(f"row failed: {e}")
@@ -48,8 +51,8 @@ def insert_cofl_sales(conn, item_id, sales):
 
     conn.executemany("""
         INSERT OR IGNORE INTO ended_auctions
-        (auction_id, item_id, quantity, price, bin, sold_at, enchantments, rarity_upgrades, bids, hot_potato_count)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (auction_id, item_id, quantity, price, bin, sold_at, enchantments, rarity_upgrades, bids, hot_potato_count, gemstones)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, rows)
     conn.commit()
     return len(rows)
