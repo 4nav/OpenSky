@@ -3,6 +3,7 @@ import numpy as np
 import json
 import time
 from bazaar import get_modifier_cost
+from gemstone import get_slot_unlock_cost
 
 SEVEN_DAYS_MS   = 7 * 24 * 60 * 60 * 1000
 ONE_DAY_MS      = 24 * 60 * 60 * 1000
@@ -44,7 +45,7 @@ def get_enchant_true_cost(prices, name, level):
     '''
     Real cost of enchant book -  we can use 16 sharp 1 books, 8 sharp 2 books, 4 sharp 3 books, 2 sharp 4 books or 1 sharp 5
     and we compute the min across all
-    cost(N) = min(bazaar_price(N), 2 × cost(N-1))
+    cost(N) = min(bazaar_price(N), 2 * cost(N-1))
     '''
     bazaar_price = prices.get(f"ENCHANTMENT_{name.upper()}_{level}", {}).get("instabuy", 0)
     if level <= 1:
@@ -57,7 +58,6 @@ def calc_enchant_cost(prices, enchantments_json, daily_vol, cap=None):
     Sum true cost of all enchants on an item, discounted by base item liquidity.
     High enchant on unpopular item -> near-zero contribution.
     Handles both NBT dict format and Coflnet list format - NBT format: {"sharpness": 5} but Coflnet format: [{"type": "sharpness", "level": 5}]:
-      both normalised to dict before processing
     """
     
     if not enchantments_json:
@@ -122,11 +122,10 @@ def get_enchant_cost_cap(conn, item_id):
     return max(enchant_cap - clean_median, 0)
 
 #----------------------Gemstones-------------------------------------------------
-def calc_gemstone_cost(prices, gemstones_json):
+def calc_gemstone_cost(prices, gemstones_json, item_id, gemstone_costs):
     """
-    Sum bazaar instabuy cost of every socketed gem on the item.
-    gemstones_json is like {"PERIDOT_0": "FLAWLESS", "RUBY_1": "PERFECT"} -
-    slot key gives gem type, value gives quality; bazaar product id is "{QUALITY}_{TYPE}_GEM".
+    Sum bazaar instabuy cost of every socketed gem on the item, plus the cost to unlock
+    each of those slots (a socketed gem proves the slot was unlocked).
     """
     if not gemstones_json:
         return 0
@@ -141,6 +140,10 @@ def calc_gemstone_cost(prices, gemstones_json):
         gem_type = slot_key.rsplit("_", 1)[0]
         product_id = f"{quality}_{gem_type}_GEM"
         total += get_modifier_cost(prices, product_id, 1)
+
+        unlock_cost = get_slot_unlock_cost(item_id, slot_key, gemstone_costs, prices)
+        if unlock_cost is not None:
+            total += unlock_cost
     return total
 
 #----------------------Price Fetching-------------------------------------------------
@@ -162,7 +165,7 @@ def _get_price_rows(conn,item_id, window_ms = SEVEN_DAYS_MS):
     """, (item_id, cutoff)).fetchall()
 
 
-def _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol):
+def _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol, gemstone_costs):
     """"Strip enchant costs from item and create a list of base prices, preserve qty for VWAP"""
     cap = get_enchant_cost_cap(conn, item_id)
     result = []
@@ -173,7 +176,7 @@ def _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol):
         hpb_cost = (get_modifier_cost(bazaar_prices, "HOT_POTATO_BOOK", min(hpb_count, 10))
                     + get_modifier_cost(bazaar_prices, "FUMING_POTATO_BOOK", max(0, hpb_count - 10)))
         recomb_cost = get_modifier_cost(bazaar_prices, "RECOMBOBULATOR_3000", recomb_flag)
-        gemstone_cost = calc_gemstone_cost(bazaar_prices, gemstones_json)
+        gemstone_cost = calc_gemstone_cost(bazaar_prices, gemstones_json, item_id, gemstone_costs)
         base = unit_price - enchant_cost - hpb_cost - recomb_cost - gemstone_cost
         if base > 0:
                 result.append((base,qty))
@@ -181,7 +184,7 @@ def _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol):
 
 # ---------------------- Public API -------------------------------------------------
 
-def get_item_stats(conn,item_id,bazaar_prices):
+def get_item_stats(conn,item_id,bazaar_prices,gemstone_costs):
     """
     All stats in one call - uses VWAP if ≥ MIN_VWAP_SALES data points (enough volume to trust weighted average), median otherwise
     """
@@ -191,7 +194,7 @@ def get_item_stats(conn,item_id,bazaar_prices):
 
     if not rows:
          return None
-    price_rows = _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol)
+    price_rows = _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol, gemstone_costs)
     if not price_rows:
          return None
     
@@ -219,9 +222,9 @@ def get_item_stats(conn,item_id,bazaar_prices):
     }
 
 
-def get_fair_price(conn, item_id, bazaar_prices):
+def get_fair_price(conn, item_id, bazaar_prices, gemstone_costs):
     """"
     returns just the fair_price float from get_item_stats, or none if no data
     """
-    stats = get_item_stats(conn, item_id, bazaar_prices)
+    stats = get_item_stats(conn, item_id, bazaar_prices, gemstone_costs)
     return stats["fair_price"] if stats else None

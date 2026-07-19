@@ -40,9 +40,6 @@ def calc_gemstone_chamber_cost(bazaar_prices):
 def get_unlock_slot_cost(item_id, slot_key, gemstone_costs, bazaar_prices):
     """
     Total coin cost to unlock one gemstone slot on an item. Should return 0 if its free to unlock. 
-    TEMPORARY: a slot's gem requirement can itself be a non-bazaar item (e.g. GEMSTONE_CHAMBER on
-    Divan armor, crafted in the Forge) - get_modifier_cost returns 0 for anything not on the
-    bazaar, so those cases will under-price until/unless that's handled separately.
     """
     item_slots = gemstone_costs.get(item_id)
     if item_slots is None or slot_key not in item_slots:
