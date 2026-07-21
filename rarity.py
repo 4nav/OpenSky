@@ -2,7 +2,7 @@ import json
 
 RARITY_ORDER = ["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHIC", "DIVINE"]
 
-def load_item_rarites(path = "static_data/item_rarities.json"):
+def load_item_rarities(path = "static_data/item_rarities.json"):
     """Static item id -> base rarity lookup, built by parsing NEU repo item lore text"""
     with open(path, "r") as f:
         return json.load(f)
