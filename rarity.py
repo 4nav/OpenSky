@@ -13,7 +13,7 @@ def get_effective_rarity(item_id, rarity_upgrades, item_rarities):
     base = item_rarities.get(item_id)
 
     if base is None or base not in RARITY_ORDER:
-        return None 
+        return base 
     
     index = RARITY_ORDER.index(base) + rarity_upgrades
     index = min(index, len(RARITY_ORDER) - 1)
