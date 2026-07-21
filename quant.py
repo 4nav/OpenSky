@@ -4,6 +4,8 @@ import json
 import time
 from bazaar import get_modifier_cost
 from gemstone import get_slot_unlock_cost
+from reforges import calc_reforge_cost
+from rarity import get_effective_rarity
 
 SEVEN_DAYS_MS   = 7 * 24 * 60 * 60 * 1000
 ONE_DAY_MS      = 24 * 60 * 60 * 1000
@@ -156,7 +158,7 @@ def _get_price_rows(conn,item_id, window_ms = SEVEN_DAYS_MS):
     cutoff = int(time.time()*1000) - window_ms
 
     return conn.execute("""
-        SELECT price, quantity, enchantments, hot_potato_count, rarity_upgrades, gemstones
+        SELECT price, quantity, enchantments, hot_potato_count, rarity_upgrades, gemstones, reforge
         FROM ended_auctions
         WHERE item_id = ?
           AND bin = 1
@@ -165,11 +167,11 @@ def _get_price_rows(conn,item_id, window_ms = SEVEN_DAYS_MS):
     """, (item_id, cutoff)).fetchall()
 
 
-def _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol, gemstone_costs):
+def _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol, gemstone_costs, reforge_stones, reforge_name_lookup, item_rarities):
     """"Strip enchant costs from item and create a list of base prices, preserve qty for VWAP"""
     cap = get_enchant_cost_cap(conn, item_id)
     result = []
-    for price,qty,enchants_json,hpb_count, recomb_flag, gemstones_json in rows:
+    for price,qty,enchants_json,hpb_count, recomb_flag, gemstones_json, reforge_name in rows:
         qty = max(qty, 1)
         unit_price = price/qty
         enchant_cost = calc_enchant_cost(bazaar_prices, enchants_json, daily_vol, cap)
@@ -177,14 +179,16 @@ def _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol, gemstone_co
                     + get_modifier_cost(bazaar_prices, "FUMING_POTATO_BOOK", max(0, hpb_count - 10)))
         recomb_cost = get_modifier_cost(bazaar_prices, "RECOMBOBULATOR_3000", recomb_flag)
         gemstone_cost = calc_gemstone_cost(bazaar_prices, gemstones_json, item_id, gemstone_costs)
-        base = unit_price - enchant_cost - hpb_cost - recomb_cost - gemstone_cost
+        rarity = get_effective_rarity(item_id, recomb_flag, item_rarities)
+        reforge_cost = calc_reforge_cost(reforge_name, rarity, bazaar_prices, reforge_stones, reforge_name_lookup) if rarity else 0 
+        base = unit_price - enchant_cost - hpb_cost - recomb_cost - gemstone_cost - reforge_cost
         if base > 0:
                 result.append((base,qty))
     return result
 
 # ---------------------- Public API -------------------------------------------------
 
-def get_item_stats(conn,item_id,bazaar_prices,gemstone_costs):
+def get_item_stats(conn,item_id,bazaar_prices,gemstone_costs, reforge_stones,reforge_name_lookup,item_rarities):
     """
     All stats in one call - uses VWAP if ≥ MIN_VWAP_SALES data points (enough volume to trust weighted average), median otherwise
     """
@@ -194,7 +198,7 @@ def get_item_stats(conn,item_id,bazaar_prices,gemstone_costs):
 
     if not rows:
          return None
-    price_rows = _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol, gemstone_costs)
+    price_rows = _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol, gemstone_costs, reforge_stones, reforge_name_lookup, item_rarities)
     if not price_rows:
          return None
     
@@ -222,9 +226,10 @@ def get_item_stats(conn,item_id,bazaar_prices,gemstone_costs):
     }
 
 
-def get_fair_price(conn, item_id, bazaar_prices, gemstone_costs):
+def get_fair_price(conn, item_id, bazaar_prices, gemstone_costs, reforge_stones, reforge_name_lookup, item_rarities):
     """"
     returns just the fair_price float from get_item_stats, or none if no data
     """
-    stats = get_item_stats(conn, item_id, bazaar_prices, gemstone_costs)
+    stats = get_item_stats(conn, item_id, bazaar_prices, gemstone_costs, reforge_stones, reforge_name_lookup, item_rarities)
+
     return stats["fair_price"] if stats else None

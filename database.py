@@ -58,7 +58,8 @@ def create_tables(conn):
             rarity_upgrades INTEGER,
             bids TEXT,
             hot_potato_count INTEGER,
-            gemstones TEXT
+            gemstones TEXT,
+            reforge TEXT
         )
         """
     )
@@ -126,8 +127,8 @@ def insert_pet(conn, pet_data, auction):
 def insert_ended_auction(conn, sold_data, auction):
     conn.execute("""
         INSERT OR REPLACE INTO ended_auctions
-        (auction_id, item_id, quantity, price, bin, sold_at, enchantments, rarity_upgrades, bids, hot_potato_count, gemstones)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (auction_id, item_id, quantity, price, bin, sold_at, enchantments, rarity_upgrades, bids, hot_potato_count, gemstones, reforge)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         auction["auction_id"],
         sold_data["item_id"],
@@ -140,6 +141,7 @@ def insert_ended_auction(conn, sold_data, auction):
         json.dumps(auction.get("bids", [])),
         sold_data.get("hot_potato_count", 0),
         sold_data.get("gemstones", "{}"),
+        sold_data.get("reforge", ""),
     )
 )
 

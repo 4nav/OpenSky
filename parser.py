@@ -46,6 +46,7 @@ def extract_sold_item(item_bytes_64):
             "rarity_upgrades": 0,
             "hot_potato_count": 0,
             "gemstones": "{}",
+            "reforge": "",
         }
     
     enchants = dict(extra.get("enchantments", {}))
@@ -56,4 +57,5 @@ def extract_sold_item(item_bytes_64):
         "rarity_upgrades": int(extra.get("rarity_upgrades", 0)),
         "hot_potato_count": int(extra.get("hot_potato_count", 0)),
         "gemstones": json.dumps(extract_gemstones(extra)),
+        "reforge": str(extra.get("modifier", "")),
     }

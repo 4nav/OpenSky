@@ -1,7 +1,7 @@
 import json
 from bazaar import get_modifier_cost
 
-def load_gemstone_slot_costs(path = "gemstonecosts.json"):
+def load_gemstone_slot_costs(path = "static_data/gemstonecosts.json"):
     """Static per-item slot unlock recipes, sourced from NEU repo's constants/gemstonecosts.json"""
     with open(path, "r") as f:
         return json.load(f)
