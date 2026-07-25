@@ -18,3 +18,4 @@ def get_effective_rarity(item_id, rarity_upgrades, item_rarities):
     index = RARITY_ORDER.index(base) + rarity_upgrades
     index = min(index, len(RARITY_ORDER) - 1)
     return RARITY_ORDER[index]
+

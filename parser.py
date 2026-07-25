@@ -47,6 +47,7 @@ def extract_sold_item(item_bytes_64):
             "hot_potato_count": 0,
             "gemstones": "{}",
             "reforge": "",
+            "dungeon_item_level": 0,
         }
     
     enchants = dict(extra.get("enchantments", {}))
@@ -58,4 +59,5 @@ def extract_sold_item(item_bytes_64):
         "hot_potato_count": int(extra.get("hot_potato_count", 0)),
         "gemstones": json.dumps(extract_gemstones(extra)),
         "reforge": str(extra.get("modifier", "")),
+        "dungeon_item_level": int(extra.get("dungeon_item_level", 0)),
     }
