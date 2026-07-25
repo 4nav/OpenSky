@@ -1,0 +1,1 @@
+i need to make a test script but im so lazy ima do this tmrw
