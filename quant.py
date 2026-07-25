@@ -182,7 +182,7 @@ def _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol, gemstone_co
         gemstone_cost = calc_gemstone_cost(bazaar_prices, gemstones_json, item_id, gemstone_costs)
         rarity = get_effective_rarity(item_id, recomb_flag, item_rarities)
         reforge_cost = calc_reforge_cost(reforge_name, rarity, bazaar_prices, reforge_stones, reforge_name_lookup) if rarity else 0 
-        essence_cost = calc_essence_cost(item_id, rarity, bazaar_prices, essence_costs) if rarity else 0
+        essence_cost = calc_essence_cost(item_id, star_count, bazaar_prices, essence_costs)
         base = unit_price - enchant_cost - hpb_cost - recomb_cost - gemstone_cost - reforge_cost - essence_cost
         if base > 0:
                 result.append((base,qty))
@@ -200,7 +200,7 @@ def get_item_stats(conn,item_id,bazaar_prices,gemstone_costs, reforge_stones,ref
 
     if not rows:
          return None
-    price_rows = _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol, gemstone_costs, reforge_stones, reforge_name_lookup, item_rarities)
+    price_rows = _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol, gemstone_costs, reforge_stones, reforge_name_lookup, item_rarities, essence_costs)
     if not price_rows:
          return None
     
