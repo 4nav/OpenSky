@@ -88,7 +88,7 @@ def inspect_row(conn, row, bazaar_prices, gemstone_costs, reforge_stones, reforg
 
 def main():
     item_id = sys.argv[1] if len(sys.argv) > 1 else None
-    sample_size = int(sys.argv[2]) if len(sys.argv) > 2 else None
+    sample_size = int(sys.argv[2]) if len(sys.argv) > 2 else 15
 
     conn = get_db_connection()
 
@@ -117,7 +117,7 @@ def main():
     for row in rows:
         inspect_row(conn, row, bazaar_prices, gemstone_costs, reforge_stones, reforge_name_lookup, item_rarities, essence_costs)
 
-        conn.close()
+    conn.close()
 
 if __name__ == "__main__":
      main()

@@ -6,7 +6,7 @@ BASIC_REFORGE_COSTS = {
 }
 
 def load_reforge_stones(path = "static_data/reforge_stones.json"):
-    with open(path, "r") as f:
+    with open(path, "r", encoding = "utf-8") as f:
         return json.load(f)
     
 def build_reforge_name_lookup(reforge_stones):
