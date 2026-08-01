@@ -54,8 +54,10 @@ def get_enchant_true_cost(prices, name, level):
     if level <= 1:
         return bazaar_price
     combine_cost = 2 * get_enchant_true_cost(prices, name, level - 1)
-    return min(bazaar_price, combine_cost)
-
+    if bazaar_price > 0 and combine_cost > 0:
+        return min(bazaar_price, combine_cost)
+    return bazaar_price or combine_cost
+    
 def calc_enchant_cost(prices, enchantments_json, daily_vol, cap=None):
     """
     Sum true cost of all enchants on an item, discounted by base item liquidity.
