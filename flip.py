@@ -59,5 +59,5 @@ min_profit_coins = 100_000):
                 "volume_tier": stats["volume_tier"],
             })
 
-        flips.sort(key=lambda f: f["profit"], reverse=True)
+    flips.sort(key=lambda f: f["profit"], reverse=True)
     return flips
