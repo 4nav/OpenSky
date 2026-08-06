@@ -17,7 +17,7 @@ LIQ_THRESHOLD   = 5
 def get_daily_volume(conn,item_id):
     '''
     Estimate BIN sale volume from total sales in time period (we cap at 7 days prior since updates might come around which kill 
-    the demand for our item but our flipper would assume it has medium sales stillS)
+    the demand for our item but our flipper would assume it has medium sales still)
     '''
     row = conn.execute("""
         SELECT COUNT(*), MIN(sold_at), MAX(sold_at)
@@ -57,7 +57,7 @@ def get_enchant_true_cost(prices, name, level):
     if bazaar_price > 0 and combine_cost > 0:
         return min(bazaar_price, combine_cost)
     return bazaar_price or combine_cost
-    
+
 def calc_enchant_cost(prices, enchantments_json, daily_vol, cap=None):
     """
     Sum true cost of all enchants on an item, discounted by base item liquidity.
@@ -170,6 +170,24 @@ def _get_price_rows(conn,item_id, window_ms = SEVEN_DAYS_MS):
     """, (item_id, cutoff)).fetchall()
 
 
+def calc_total_modifier_cost(item_id, bazaar_prices, daily_vol, cap, gemstone_costs, reforge_stones,
+                              reforge_name_lookup, item_rarities, essence_costs,
+                              enchants_json, hpb_count, rarity_upgrades, gemstones_json, reforge_name, star_count):
+    """
+    Sums every modifier's cost for one item (enchants, HPB, recomb, gemstones, reforge, essence/stars).
+    Shared by _base_prices_rows (stripping historical sales) and flip detection(current sales).
+    """
+    enchant_cost = calc_enchant_cost(bazaar_prices, enchants_json, daily_vol, cap)
+    hpb_cost = (get_modifier_cost(bazaar_prices, "HOT_POTATO_BOOK", min(hpb_count, 10))
+                + get_modifier_cost(bazaar_prices, "FUMING_POTATO_BOOK", max(0, hpb_count - 10)))
+    recomb_cost = get_modifier_cost(bazaar_prices, "RECOMBOBULATOR_3000", rarity_upgrades)
+    gemstone_cost = calc_gemstone_cost(bazaar_prices, gemstones_json, item_id, gemstone_costs)
+    rarity = get_effective_rarity(item_id, rarity_upgrades, item_rarities)
+    reforge_cost = calc_reforge_cost(reforge_name, rarity, bazaar_prices, reforge_stones, reforge_name_lookup) if rarity else 0
+    essence_cost = calc_essence_cost(item_id, star_count, bazaar_prices, essence_costs)
+    return enchant_cost + hpb_cost + recomb_cost + gemstone_cost + reforge_cost + essence_cost
+
+
 def _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol, gemstone_costs, reforge_stones, reforge_name_lookup, item_rarities, essence_costs):
     """"Strip enchant costs from item and create a list of base prices, preserve qty for VWAP"""
     cap = get_enchant_cost_cap(conn, item_id)
@@ -177,15 +195,10 @@ def _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol, gemstone_co
     for price,qty,enchants_json,hpb_count, recomb_flag, gemstones_json, reforge_name,star_count in rows:
         qty = max(qty, 1)
         unit_price = price/qty
-        enchant_cost = calc_enchant_cost(bazaar_prices, enchants_json, daily_vol, cap)
-        hpb_cost = (get_modifier_cost(bazaar_prices, "HOT_POTATO_BOOK", min(hpb_count, 10))
-                    + get_modifier_cost(bazaar_prices, "FUMING_POTATO_BOOK", max(0, hpb_count - 10)))
-        recomb_cost = get_modifier_cost(bazaar_prices, "RECOMBOBULATOR_3000", recomb_flag)
-        gemstone_cost = calc_gemstone_cost(bazaar_prices, gemstones_json, item_id, gemstone_costs)
-        rarity = get_effective_rarity(item_id, recomb_flag, item_rarities)
-        reforge_cost = calc_reforge_cost(reforge_name, rarity, bazaar_prices, reforge_stones, reforge_name_lookup) if rarity else 0 
-        essence_cost = calc_essence_cost(item_id, star_count, bazaar_prices, essence_costs)
-        base = unit_price - enchant_cost - hpb_cost - recomb_cost - gemstone_cost - reforge_cost - essence_cost
+        total_modifier_cost = calc_total_modifier_cost(item_id, bazaar_prices, daily_vol, cap, gemstone_costs,
+                                                         reforge_stones, reforge_name_lookup, item_rarities, essence_costs,
+                                                         enchants_json, hpb_count, recomb_flag, gemstones_json, reforge_name, star_count)
+        base = unit_price - total_modifier_cost
         if base > 0:
                 result.append((base,qty))
     return result

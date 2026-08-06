@@ -23,6 +23,7 @@ def create_tables(conn):
             dye_item TEXT,
             hot_potato_count INTEGER,
             gemstones TEXT,
+            dungeon_item_level INTEGER,
             bin INTEGER,
             start INTEGER,
             end INTEGER
@@ -83,8 +84,8 @@ def insert_item_listing(conn, item_data, auction):
     conn.execute(
         """
         INSERT OR REPLACE INTO item_listings (
-            uuid, item_id, name, price, reforge, enchantments, tier, rarity_upgrades, dye_item, hot_potato_count, gemstones, bin, start, end
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            uuid, item_id, name, price, reforge, enchantments, tier, rarity_upgrades, dye_item, hot_potato_count, gemstones, dungeon_item_level, bin, start, end
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             auction["uuid"],
@@ -98,6 +99,7 @@ def insert_item_listing(conn, item_data, auction):
             item_data["dye_item"],
             item_data["hot_potato_count"],
             item_data["gemstones"],
+            item_data["dungeon_item_level"],
             int(auction.get("bin", False)),
             auction["start"],
             auction["end"],

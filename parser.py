@@ -30,6 +30,7 @@ def extract_item_data(item_bytes_64, tier):
         "dye_item": str(extra.get("dye_item", "")),
         "hot_potato_count": int(extra.get("hot_potato_count", 0)),
         "gemstones": json.dumps(extract_gemstones(extra)),
+        "dungeon_item_level": int(extra.get("dungeon_item_level", 0)),
     }
 
 def extract_sold_item(item_bytes_64):
