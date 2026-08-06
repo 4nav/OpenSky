@@ -34,14 +34,15 @@ def get_daily_volume(conn,item_id):
     return count / day_span if day_span > 0 else 0
 
 
-def volume_tier(daily_vol):
+def volume_tier(daily_vol, high_threshold=20, medium_threshold=5, low_threshold=1):
     """
-    classify liquidity of item
+    classify liquidity of item. Thresholds are parameters, not hardcoded, so callers can
+    tune what counts as high/medium/low/illiquid volume for their own use case.
     """
-    if daily_vol > 20: return "high"
-    if daily_vol > 5: return "medium"
-    if daily_vol > 1: return "low"
-    else: return "illiquid"
+    if daily_vol > high_threshold: return "high"
+    if daily_vol > medium_threshold: return "medium"
+    if daily_vol > low_threshold: return "low"
+    return "illiquid"
 
 #----------------------Enchantments-------------------------------------------------
 def get_enchant_true_cost(prices, name, level):
@@ -205,7 +206,8 @@ def _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol, gemstone_co
 
 # ---------------------- Public API -------------------------------------------------
 
-def get_item_stats(conn,item_id,bazaar_prices,gemstone_costs, reforge_stones,reforge_name_lookup,item_rarities, essence_costs):
+def get_item_stats(conn,item_id,bazaar_prices,gemstone_costs, reforge_stones,reforge_name_lookup,item_rarities, essence_costs,
+                    high_vol_threshold=20, medium_vol_threshold=5, low_vol_threshold=1):
     """
     All stats in one call - uses VWAP if ≥ MIN_VWAP_SALES data points (enough volume to trust weighted average), median otherwise
     """
@@ -238,7 +240,7 @@ def get_item_stats(conn,item_id,bazaar_prices,gemstone_costs, reforge_stones,ref
         "median":       median,
         "sigma":        float(np.std(log_returns)),
         "daily_volume": daily_vol,
-        "volume_tier":  volume_tier(daily_vol),
+        "volume_tier":  volume_tier(daily_vol, high_vol_threshold, medium_vol_threshold, low_vol_threshold),
         "sample_size":  len(price_rows),
     }
 
