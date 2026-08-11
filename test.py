@@ -1,1 +1,0 @@
-i shd test our auction flip finder but im so tired. maybe tomorrow.

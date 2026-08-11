@@ -57,6 +57,7 @@ min_profit_coins = 100_000):
                 "margin_pct": margin_pct,
                 "sample_size": stats["sample_size"],
                 "volume_tier": stats["volume_tier"],
+                "sigma": stats["sigma"],
             })
 
     flips.sort(key=lambda f: f["profit"], reverse=True)
