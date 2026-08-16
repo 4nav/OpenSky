@@ -45,6 +45,8 @@ def volume_tier(daily_vol, high_threshold=20, medium_threshold=5, low_threshold=
     return "illiquid"
 
 #----------------------Enchantments-------------------------------------------------
+NON_COMBINABLE_ENCHANTS = {"champion", "compact", "hecatomb", "expertise", "cultivating", "toxophilite"}
+
 def get_enchant_true_cost(prices, name, level):
     '''
     Real cost of enchant book -  we can use 16 sharp 1 books, 8 sharp 2 books, 4 sharp 3 books, 2 sharp 4 books or 1 sharp 5
@@ -52,7 +54,7 @@ def get_enchant_true_cost(prices, name, level):
     cost(N) = min(bazaar_price(N), 2 * cost(N-1))
     '''
     bazaar_price = prices.get(f"ENCHANTMENT_{name.upper()}_{level}", {}).get("instabuy", 0)
-    if level <= 1:
+    if level <= 1 or name.lower() in NON_COMBINABLE_ENCHANTS:
         return bazaar_price
     combine_cost = 2 * get_enchant_true_cost(prices, name, level - 1)
     if bazaar_price > 0 and combine_cost > 0:

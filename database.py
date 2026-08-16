@@ -77,7 +77,18 @@ def create_tables(conn):
         )
         """
     )
-
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_ended_auctions_item_bin_sold
+        ON ended_auctions (item_id, bin, sold_at)
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_item_listings_bin
+        ON item_listings (bin)
+        """
+    )
     conn.commit()
 
 def insert_item_listing(conn, item_data, auction):
