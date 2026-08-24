@@ -51,6 +51,7 @@ def create_tables(conn):
         CREATE TABLE IF NOT EXISTS ended_auctions (
             auction_id TEXT PRIMARY KEY,
             item_id TEXT,
+            name TEXT,
             quantity INTEGER,
             price INTEGER,
             bin INTEGER,
@@ -141,11 +142,12 @@ def insert_pet(conn, pet_data, auction):
 def insert_ended_auction(conn, sold_data, auction):
     conn.execute("""
         INSERT OR REPLACE INTO ended_auctions
-        (auction_id, item_id, quantity, price, bin, sold_at, enchantments, rarity_upgrades, bids, hot_potato_count, gemstones, reforge, dungeon_item_level)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (auction_id, item_id, name, quantity, price, bin, sold_at, enchantments, rarity_upgrades, bids, hot_potato_count, gemstones, reforge, dungeon_item_level)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         auction["auction_id"],
         sold_data["item_id"],
+        sold_data.get("name", ""),
         sold_data["quantity"],
         auction["price"],
         int(auction.get("bin", False)),
@@ -159,7 +161,6 @@ def insert_ended_auction(conn, sold_data, auction):
         sold_data.get("dungeon_item_level", 0),
     )
 )
-
 def upsert_bazaar_prices(conn,prices):
     now = int(time.time() * 1000)
     conn.executemany("""

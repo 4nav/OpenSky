@@ -42,6 +42,7 @@ def extract_sold_item(item_bytes_64):
         pet_data = extract_pet_data(extra)
         return {
             "item_id": f"PET_{pet_data['species']}",
+            "name": str(item["tag"]["display"]["Name"]),
             "quantity": int(item["Count"]),
             "enchantments": "[]",
             "rarity_upgrades": 0,
@@ -54,6 +55,7 @@ def extract_sold_item(item_bytes_64):
     enchants = dict(extra.get("enchantments", {}))
     return {
         "item_id": str(extra["id"]),
+        "name": str(item["tag"]["display"]["Name"]),
         "quantity": int(item["Count"]),
         "enchantments": json.dumps(enchants),
         "rarity_upgrades": int(extra.get("rarity_upgrades", 0)),
