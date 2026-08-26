@@ -7,10 +7,12 @@ GEM_TYPES = {"RUBY", "AMBER", "SAPPHIRE", "JADE", "AMETHYST", "TOPAZ", "JASPER",
 def extract_gemstones(extra):
     gemstones = {}
     for key,value in extra.items():
-        if key == "unlocked_slots" or key.endswith(".uuid"):
+        if key == "unlocked_slots" or key.endswith(".uuid") or key.endswith("_gem"):
             continue
         gem_type = key.rsplit("_",1)[0]
         if gem_type in GEM_TYPES:
+            gemstones[key] = str(value)
+        elif f"{key}_gem" in extra:
             gemstones[key] = str(value)
     return gemstones
 

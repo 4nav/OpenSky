@@ -42,10 +42,10 @@ def insert_cofl_sales(conn, item_id, sales):
                 json.dumps(sale.get("enchantments", [])),
                 int(flattened.get("rarity_upgrades", 0)),
                 "[]",
-                int(flattened.get("hot_potato_count", 0)),
+                int(flattened.get("hpc", 0)),
                 json.dumps(extract_gemstones(flattened)),
                 flattened.get("modifier", ""),
-                int(flattened.get("dungeon_item_level", 0)),
+                int(flattened.get("upgrade_level", 0)),
             ))
         except Exception as e:
             print(f"row failed: {e}")

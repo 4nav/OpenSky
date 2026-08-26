@@ -107,12 +107,14 @@ def get_enchant_cost_cap(conn, item_id):
         SELECT price, quantity FROM ended_auctions
         WHERE item_id = ? AND bin = 1 
           AND (enchantments = '{}' OR enchantments = '[]' OR enchantments IS NULL)
+          AND (name IS NULL OR name NOT LIKE '%✿%' OR name NOT LIKE '%✦%')
     """, (item_id,)).fetchall()
 
     enchanted_rows = conn.execute("""
         SELECT price, quantity FROM ended_auctions
         WHERE item_id = ? AND bin = 1
           AND enchantments != '{}' AND enchantments != '[]' AND enchantments IS NOT NULL
+          AND (name IS NULL OR name NOT LIKE '%✿%' OR name NOT LIKE '%✦%')
     """, (item_id,)).fetchall()
 
 
@@ -164,7 +166,7 @@ def _get_price_rows(conn,item_id, window_ms = SEVEN_DAYS_MS):
     cutoff = int(time.time()*1000) - window_ms
 
     return conn.execute("""
-        SELECT price, quantity, enchantments, hot_potato_count, rarity_upgrades, gemstones, reforge, dungeon_item_level
+        SELECT price, quantity, enchantments, hot_potato_count, rarity_upgrades, gemstones, reforge, dungeon_item_level, name
         FROM ended_auctions
         WHERE item_id = ?
           AND bin = 1
@@ -195,7 +197,9 @@ def _base_prices_rows(conn, item_id, bazaar_prices, rows, daily_vol, gemstone_co
     """"Strip enchant costs from item and create a list of base prices, preserve qty for VWAP"""
     cap = get_enchant_cost_cap(conn, item_id)
     result = []
-    for price,qty,enchants_json,hpb_count, recomb_flag, gemstones_json, reforge_name,star_count in rows:
+    for price,qty,enchants_json,hpb_count, recomb_flag, gemstones_json, reforge_name,star_count,name in rows:
+        if name and ("✿" in name or "✦" in name):
+            continue #dyed
         qty = max(qty, 1)
         unit_price = price/qty
         total_modifier_cost = calc_total_modifier_cost(item_id, bazaar_prices, daily_vol, cap, gemstone_costs,
