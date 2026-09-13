@@ -35,6 +35,7 @@ def insert_cofl_sales(conn, item_id, sales):
             rows.append((
                 sale["uuid"],
                 item_id,
+                sale.get("itemName", ""),
                 sale.get("count", 1),
                 sale.get("highestBidAmount", 0),
                 1,
@@ -53,8 +54,8 @@ def insert_cofl_sales(conn, item_id, sales):
 
     conn.executemany("""
         INSERT OR IGNORE INTO ended_auctions
-        (auction_id, item_id, quantity, price, bin, sold_at, enchantments, rarity_upgrades, bids, hot_potato_count, gemstones, reforge, dungeon_item_level)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (auction_id, item_id, name, quantity, price, bin, sold_at, enchantments, rarity_upgrades, bids, hot_potato_count, gemstones, reforge, dungeon_item_level)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, rows)
     conn.commit()
     return len(rows)
