@@ -13,7 +13,8 @@ def extract_gemstones(extra):
         if gem_type in GEM_TYPES:
             gemstones[key] = str(value)
         elif f"{key}_gem" in extra:
-            gemstones[key] = str(value)
+            real_type = extra[f"{key}_gem"]
+            gemstones[key] = f"{value}:{real_type}"
     return gemstones
 
 

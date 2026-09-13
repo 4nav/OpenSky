@@ -146,8 +146,14 @@ def calc_gemstone_cost(prices, gemstones_json, item_id, gemstone_costs):
         return 0
 
     total = 0
-    for slot_key, quality in gemstones.items():
-        gem_type = slot_key.rsplit("_", 1)[0]
+    for slot_key, value in gemstones.items():
+        if ":" in value:
+            # universal slot 
+            quality, gem_type = value.split(":", 1)
+        else:
+            quality = value
+            gem_type = slot_key.rsplit("_", 1)[0]
+
         product_id = f"{quality}_{gem_type}_GEM"
         total += get_modifier_cost(prices, product_id, 1)
 
