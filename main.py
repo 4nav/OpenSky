@@ -8,7 +8,7 @@ from pet import extract_pet_data, is_pet
 from database import get_db_connection, create_tables, insert_item_listing, insert_pet, upsert_bazaar_prices
 from bazaar import fetch_bazaar, parse_bazaar
 
-#test commit 3
+#test commit 4
 
 POLL_INTERVAL = 60
 
